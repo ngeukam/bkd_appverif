@@ -95,7 +95,7 @@ const sendConfirmationEmail = async (user, secret) => {
 		from: process.env.EMAIL_USER,
 		to: user.email,
 		subject: "Confirm your registration",
-		html:htmlContent
+		html: htmlContent,
 	};
 	// Configurer le transporteur pour envoyer l’e-mail
 	const transporter = nodemailer.createTransport({
@@ -196,7 +196,7 @@ const sendConfirmationResetPass = async (user, secret) => {
 		from: process.env.EMAIL_USER,
 		to: user.email,
 		subject: "Change Your Password",
-		htlml:htmlContent
+		htlml: htmlContent,
 	};
 	// Configurer le transporteur pour envoyer l’e-mail
 	const transporter = nodemailer.createTransport({
@@ -264,41 +264,46 @@ const userRegistration = async (req, res) => {
 const confirmEmail = async (req, res) => {
 	const { token } = req.body;
 	try {
+		// Check if the token exists in the request body
+		if (!token) {
+			return res.status(400).json({ msg: "Token is required" });
+		}
+
 		// Verify the token
-		const decoded = jwt.verify(token, secret);
+		const decoded = jwt.verify(token, process.env.JWT_SECRET); // Make sure the JWT secret is correctly set in the environment
+		// Search for the user by the decoded ID and confirmation token
 		const user = await User.findOne({
 			_id: decoded._id,
 			confirmationToken: token,
 		});
-		if (!user) {
-			return res.status(400).json({ msg: "Invalid or expired token" });
-		}
 
+		// If no user is found or token doesn't match, return an error
+		if (!user) {
+			return res.status(400).json({
+				msg: "Invalid or expired token",
+				error: true,
+			});
+		}
 		// Mark the user as verified
 		user.verified = true;
 		user.confirmationToken = null; // Clear the token once verified
 		await user.save();
-		// Generate a new JWT for authentication
-		const authToken = jwt.sign({ _id: user?._id }, secret, {
-			expiresIn: "15d",
-		});
 
+		// Return success response with user data
 		return res.status(200).json({
 			error: false,
-			msg: "Email confirmed successfully",
-			data: {
-				role: user?.role,
-				is_tester: user?.is_tester,
-				verified: user?.verified,
-				authToken: authToken,
-			},
+			msg: "Email confirmed successfully; You can Log in",
 		});
 	} catch (error) {
-		return res
-			.status(400)
-			.json({ msg: "Failed to confirm email, invalid or expired token" });
+		console.error(error); // Log the error to help with debugging
+		// Return a general error response for unexpected errors
+		return res.status(500).json({
+			error: true,
+			msg: "Failed to confirm email, an unexpected error occurred",
+		});
 	}
 };
+
 //User Login
 const userLogin = async (req, res) => {
 	let { body } = req;
@@ -316,7 +321,7 @@ const userLogin = async (req, res) => {
 				return res.status(403).json({
 					error: true,
 					msg:
-						"Your account is not activated. A verification email has been sent.",
+						"Your account is not verified. A verification email has been sent.",
 				});
 			}
 			if (!user?.password) {
@@ -350,11 +355,13 @@ const userLogin = async (req, res) => {
 							email: user?.email,
 							role: user?.role,
 							verified: user?.verified,
-							is_tester:user?.is_tester
+							is_tester: user?.is_tester,
 						},
 					});
 				} else {
-					return res.status(401).json({error: true, msg: "Invalid credentials" });
+					return res
+						.status(401)
+						.json({ error: true, msg: "Invalid credentials" });
 				}
 			} else {
 				return res.status(404).json({ msg: "User not found" });
@@ -453,31 +460,47 @@ const userVerifyByEmail = async (req, res) => {
 
 const userUpdateByToken = async (req, res) => {
 	try {
-		let { _id } = res.locals.user || {};
-		const { body } = req;
-		let user = await User.findById(_id);
-		if (!!user) {
-			delete body.password;
-			const data = await User.updateOne(
-				{ _id: user._id },
-				{ $set: { ...body } }
-			);
-			return res.status(200).send({
-				error: false,
-				msg: "Successfully updated",
-			});
-		} else {
-			return res.status(401).send({
-				error: true,
-				msg: "Unauthorized action",
-			});
+		const { _id } = res.locals.user || {}; // Authenticated user's ID
+		const { body } = req; // Request body
+		if (!_id) {
+			return res.status(401).send({ error: true, msg: "Unauthorized action" });
 		}
-	} catch (e) {
-		console.log(e);
-		return res.status(500).send({
-			error: true,
-			msg: "Server failed",
+
+		// Retrieve the current user
+		let user = await User.findById(_id);
+		if (!user) {
+			return res.status(404).send({ error: true, msg: "User not found" });
+		}
+
+		// Flag to indicate if a duplicate phone number was found
+		let phoneDuplicate = false;
+
+		// Check if a phone number is provided and already exists for another user
+		if (body.phone) {
+			const existingUser = await User.findOne({ phone: body.phone });
+			if (existingUser && existingUser._id.toString() !== _id) {
+				// Set the duplicate flag to true, but continue with the update
+				phoneDuplicate = true;
+				delete body.phone;
+			}
+		}
+
+		// Ensure password is not updated
+		delete body.password;
+
+		// Perform the update for all other fields
+		await User.updateOne({ _id }, { $set: { ...body } });
+
+		// Send a response based on the phone duplication check
+		return res.status(200).send({
+			error: false,
+			msg: phoneDuplicate
+				? "Phone number already exists, but other fields were updated."
+				: "Successfully updated",
 		});
+	} catch (e) {
+		console.error(e);
+		return res.status(500).send({ error: true, msg: "Server error" });
 	}
 };
 
@@ -773,5 +796,5 @@ module.exports = {
 	checkEmailExistRequestToken,
 	changePasswordRequest,
 	getUsersWithWalletAmounts,
-	getUserDetailsWithWallet
+	getUserDetailsWithWallet,
 };

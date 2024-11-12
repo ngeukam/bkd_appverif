@@ -30,7 +30,7 @@ const generateUniqueCode = async () => {
 };
 
 //Get commission
-const getCurrentCommission = async (req, res, next) => {
+const getCurrentCommission = async (req, res) => {
 	try {
 		const commission = await Commission.findOne().select("rate"); // Replace with actual field names
 		if (!commission) {
@@ -47,7 +47,7 @@ const getCurrentCommission = async (req, res, next) => {
 };
 
 //Update commission
-const updateCurrentCommission = async (req, res, next) => {
+const updateCurrentCommission = async (req, res) => {
 	const { rateId, ...updateFields } = req.body;
 	try {
 		const result = await Commission.updateOne(
@@ -77,7 +77,7 @@ const updateCurrentCommission = async (req, res, next) => {
 };
 
 // Fonctions pour créer un nouveau projet
-const createProjectAndPayWithCash = async (req, res, next) => {
+const createProjectAndPayWithCash = async (req, res) => {
 	const {
 		name,
 		link,
@@ -274,7 +274,7 @@ const createProjectAndPayWithCash = async (req, res, next) => {
 	}
 };
 
-const createProjectAndPayWithWallet = async (req, res, next) => {
+const createProjectAndPayWithWallet = async (req, res) => {
 	let { _id } = res.locals.user;
 	if (!_id) {
 		return res.status(400).json({
@@ -541,7 +541,7 @@ const createProjectAndPayWithWallet = async (req, res, next) => {
 };
 
 // List all projects for a specific tester
-const listProjectsByTester = async (req, res, next) => {
+const listProjectsByTester = async (req, res) => {
 	const currentPage = parseInt(req.query.currentPage || "1", 10); // Default to page 1 if not specified
 	try {
 		const { _id } = res.locals.user || {};
@@ -617,7 +617,7 @@ const listProjectsByTester = async (req, res, next) => {
 };
 
 // Delete Project
-const deleteProject = async (req, res, next) => {
+const deleteProject = async (req, res) => {
 	const { projectId } = req.body;
 	try {
 		// Check if the project exists
@@ -644,7 +644,7 @@ const deleteProject = async (req, res, next) => {
 };
 
 //Tester Decline Project
-const testerDeclineProject = async (req, res, next) => {
+const testerDeclineProject = async (req, res) => {
 	let { projectId } = req.body;
 	try {
 		const { _id } = res.locals.user || {};
@@ -679,7 +679,7 @@ const testerDeclineProject = async (req, res, next) => {
 };
 
 // Un Testeur qui accepte un projet
-const testerAcceptProject = async (req, res, next) => {
+const testerAcceptProject = async (req, res) => {
 	const { projectId } = req.body;
 	const session = await mongoose.startSession();
 
@@ -746,7 +746,7 @@ const testerAcceptProject = async (req, res, next) => {
 };
 
 //Retrieve accepted project by specific tester
-const getTesterAcceptedProjects = async (req, res, next) => {
+const getTesterAcceptedProjects = async (req, res) => {
 	const currentPage = parseInt(req.query.currentPage || "1", 10); // Pagination parameters
 	try {
 		const { _id } = res.locals.user || {};
@@ -827,7 +827,7 @@ const getTesterAcceptedProjects = async (req, res, next) => {
 	}
 };
 
-const countTesterAcceptedProjects = async (req, res, next) => {
+const countTesterAcceptedProjects = async (req, res) => {
 	const { user } = res.locals || {};
 	try {
 		if (!user) {
@@ -850,7 +850,7 @@ const countTesterAcceptedProjects = async (req, res, next) => {
 	}
 };
 
-const countUserProjects = async (req, res, next) => {
+const countUserProjects = async (req, res) => {
 	const { user } = res.locals || {};
 	try {
 		if (!user) {
@@ -873,7 +873,7 @@ const countUserProjects = async (req, res, next) => {
 	}
 };
 //All Projects of specific User
-const getAllUserProjects = async (req, res, next) => {
+const getAllUserProjects = async (req, res) => {
 	const currentPage = parseInt(req.query.currentPage || "1", 10); // Pagination
 	try {
 		const { user } = res.locals || {};
@@ -975,7 +975,7 @@ const getAllUserProjects = async (req, res, next) => {
 	}
 };
 
-const getListsPreferences = async (req, res, next) => {
+const getListsPreferences = async (req, res) => {
 	try {
 		const hobbies = await User.distinct("hobbies", {
 			is_tester: true,
@@ -1040,7 +1040,7 @@ const getListsPreferences = async (req, res, next) => {
 };
 
 // Contrôleur qui gére les critéres de choix des testeurs
-const getTestersCount = async (req, res, next) => {
+const getTestersCount = async (req, res) => {
 	try {
 		// Récupérer les paramètres depuis la requête (GET ou POST)
 		const {
@@ -1117,7 +1117,7 @@ const getTestersCount = async (req, res, next) => {
 	}
 };
 
-const countTesterAssignedProject = async (req, res, next) => {
+const countTesterAssignedProject = async (req, res) => {
 	const { projectId } = req.query;
 	try {
 		const project = await Project.findById(projectId);
@@ -1145,7 +1145,7 @@ const countTesterAssignedProject = async (req, res, next) => {
 // *************Admin Part***********//
 
 // Fonction pour obtenir tous les projets
-const getAllProjects = async (req, res, next) => {
+const getAllProjects = async (req, res) => {
 	try {
 		const { query } = req;
 		const { user } = res.locals;
@@ -1285,7 +1285,7 @@ const getAllProjects = async (req, res, next) => {
 };
 
 // Détails du projet
-const getProjectDetails = async (req, res, next) => {
+const getProjectDetails = async (req, res) => {
 	try {
 		const { _id } = req.query; // Assuming you have the project ID in the query params
 
@@ -1395,7 +1395,7 @@ const getProjectDetails = async (req, res, next) => {
 };
 
 //Valider le paiement au cash
-const validateCashPayment = async (req, res, next) => {
+const validateCashPayment = async (req, res) => {
 	const { projectId } = req.body;
 	const session = await mongoose.startSession();
 	session.startTransaction();
@@ -1460,7 +1460,7 @@ const validateCashPayment = async (req, res, next) => {
 	}
 };
 //complete Test And Distribute Payments
-const completeTestAndDistributePayments = async (req, res, next) => {
+const completeTestAndDistributePayments = async (req, res) => {
 	const session = await mongoose.startSession();
 	session.startTransaction();
 	try {
