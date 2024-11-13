@@ -196,7 +196,7 @@ const sendConfirmationResetPass = async (user, secret) => {
 		from: process.env.EMAIL_USER,
 		to: user.email,
 		subject: "Change Your Password",
-		htlml: htmlContent,
+		html: htmlContent,
 	};
 	// Configurer le transporteur pour envoyer l’e-mail
 	const transporter = nodemailer.createTransport({

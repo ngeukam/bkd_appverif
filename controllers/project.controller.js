@@ -251,7 +251,7 @@ const createProjectAndPayWithCash = async (req, res) => {
 			commission,
 		});
 		const savedProject = await newProject.save();
-		await sendGmailToAdmin(savedProject);
+		sendGmailToAdmin(savedProject);
 		for (const admin of useradmin) {
 			admin.fcm_token.forEach(async (token) => {
 				await sendNotification(
@@ -495,7 +495,7 @@ const createProjectAndPayWithWallet = async (req, res) => {
 			session
 		);
 		for (const tester of selectedtesters) {
-			await sendGmailAddressToTester(tester.email, savedProject);
+			sendGmailAddressToTester(tester.email, savedProject);
 			tester.fcm_token.forEach(async (token) => {
 				await sendNotification(
 					token,
@@ -504,7 +504,7 @@ const createProjectAndPayWithWallet = async (req, res) => {
 				);
 			});
 		}
-		await sendGmailToAdmin(savedProject);
+		sendGmailToAdmin(savedProject);
 		for (const admin of useradmin) {
 			admin.fcm_token.forEach(async (token) => {
 				await sendNotification(
