@@ -27,6 +27,7 @@ let schema = new Schema(
 		phone: {
 			type: String,
 			trim: true,
+			unique:true
 		},
 		permission: {
 			type: Schema.Types.ObjectId,

@@ -5,7 +5,12 @@ const projectsRoutes = require("./api/project.route");
 const paymentsRoutes = require("./api/payment.route");
 const walletRoutes = require("./api/wallet.route");
 const withdrawRoutes = require("./api/withdraw.route");
-const fileRoutes = require("./api/file.route")
+const fileRoutes = require("./api/file.route");
+const agerangeRoutes = require("./api/agerange.route");
+const appsizeRoutes = require("./api/appsize.route");
+const businesstypeRoutes = require("./api/businesstype.route");
+const priceRoutes = require("./api/totalprice.route");
+
 const apiRouters = Router();
 apiRouters.use("/user", userRoutes);
 apiRouters.use("/settings", languagesRoutes);
@@ -14,4 +19,8 @@ apiRouters.use("/payment", paymentsRoutes);
 apiRouters.use("/wallet", walletRoutes);
 apiRouters.use("/withdraw", withdrawRoutes);
 apiRouters.use("/file", fileRoutes);
+apiRouters.use("/age", agerangeRoutes);
+apiRouters.use("/appsize", appsizeRoutes);
+apiRouters.use("/business", businesstypeRoutes);
+apiRouters.use("/price", priceRoutes);
 module.exports = apiRouters;

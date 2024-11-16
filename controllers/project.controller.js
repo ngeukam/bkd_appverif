@@ -9,11 +9,13 @@ const Payment = require("../models/payment.model");
 const { sendNotification, admin } = require("../utils/pushNotifications/push");
 const { pricingRules } = require("../utils/price_rules");
 const Commission = require("../models/commission.model");
+const calculateTotalPrice = require("../utils/priceCalculator");
+
 const {
 	sendGmailAddressToTester,
 	sendGmailAddressToOwner,
 	sendGmailAddressToConfirmPayTesters,
-	sendGmailToAdmin
+	sendGmailToAdmin,
 } = require("../utils/sendEmail");
 // Fonction pour générer un code unique
 const generateUniqueCode = async () => {
@@ -112,99 +114,6 @@ const createProjectAndPayWithCash = async (req, res) => {
 			});
 		}
 
-		const calculateTotalPrice = (formData) => {
-			let total = 0;
-			// Calcul des prix selon les âges
-			if (formData.age && Array.isArray(formData.age)) {
-				formData.age.forEach((age) => {
-					if (
-						pricingRules.agePrices &&
-						pricingRules.agePrices[age] !== undefined
-					) {
-						total += pricingRules.agePrices[age];
-					} else {
-						total += 0.1; // Valeur par défaut si la clé est inexistante
-					}
-				});
-			} else {
-				console.error('Invalid or missing "age" data:', formData.age);
-			}
-
-			// Calcul des prix selon le genre
-			if (formData.business && Array.isArray(formData.business)) {
-				formData.business.forEach((business) => {
-					if (
-						pricingRules.businessPrices &&
-						pricingRules.businessPrices[business] !== undefined
-					) {
-						total += pricingRules.businessPrices[business];
-					} else {
-						total += 0.1; // Valeur par défaut si la clé est inexistante
-					}
-				});
-			} else {
-				console.error('Invalid or missing "business" data:', formData.business);
-			}
-
-			// Calcul des prix selon le pays
-			if (formData.country && Array.isArray(formData.country)) {
-				formData.country.forEach((country) => {
-					if (
-						pricingRules.countryPrices &&
-						pricingRules.countryPrices[country] !== undefined
-					) {
-						total += pricingRules.countryPrices[country];
-					} else {
-						total += 0.05; // Valeur par défaut si la clé est inexistante
-					}
-				});
-			} else {
-				console.error('Invalid or missing "country" data:', formData.country);
-			}
-
-			// Calcul des prix selon la taille de l'app
-			if (
-				formData.app_size &&
-				pricingRules.app_sizePrices &&
-				pricingRules.app_sizePrices[formData.app_size] !== undefined
-			) {
-				total += pricingRules.app_sizePrices[formData.app_size];
-			} else {
-				total += 0.5; // Valeur par défaut si la clé est inexistante ou si formData.app_size est manquant
-			}
-
-			// Ajouter le prix pour les testeurs
-			if (formData.nb_tester && !isNaN(formData.nb_tester)) {
-				total *= formData.nb_tester; // Multiplier par le nombre de testeurs
-			} else {
-				console.error(
-					'Invalid or missing "nb_tester" data:',
-					formData.nb_tester
-				);
-			}
-
-			// Calcul des différences de dates
-			if (formData.start_date && formData.end_date) {
-				const startDate = Date.parse(formData.start_date);
-				const endDate = Date.parse(formData.end_date);
-				if (startDate && endDate && endDate > startDate) {
-					const daysDifference = Math.ceil(
-						(endDate - startDate) / (1000 * 60 * 60 * 24)
-					);
-					total *= daysDifference; // Multiplier le prix par la différence de jours
-				} else {
-					console.error(
-						"Invalid date range: start_date and end_date are incorrect."
-					);
-				}
-			} else {
-				console.error(
-					"Invalid or missing date range: start_date and end_date."
-				);
-			}
-
-			return Math.ceil(total);
-		};
 
 		const formData = {
 			age,
@@ -215,8 +124,8 @@ const createProjectAndPayWithCash = async (req, res) => {
 			start_date,
 			end_date,
 		};
-		const calculatedAmount = calculateTotalPrice(formData);
-		if (calculatedAmount !== amount) {
+		const totalPrice = await calculateTotalPrice(formData);
+		if (totalPrice !== amount) {
 			return res.status(400).json({
 				success: false,
 				message: "The calculated price does not match the provided price",
@@ -245,7 +154,7 @@ const createProjectAndPayWithCash = async (req, res) => {
 			end_date,
 			user,
 			testers,
-			amount: calculatedAmount,
+			amount: totalPrice,
 			code: uniqueCode,
 			paymentMethod: "cash",
 			commission,
@@ -317,99 +226,7 @@ const createProjectAndPayWithWallet = async (req, res) => {
 				message: "Please fill in all required fields",
 			});
 		}
-		const calculateTotalPrice = (formData) => {
-			let total = 0;
-			// Calcul des prix selon les âges
-			if (formData.age && Array.isArray(formData.age)) {
-				formData.age.forEach((age) => {
-					if (
-						pricingRules.agePrices &&
-						pricingRules.agePrices[age] !== undefined
-					) {
-						total += pricingRules.agePrices[age];
-					} else {
-						total += 0.1; // Valeur par défaut si la clé est inexistante
-					}
-				});
-			} else {
-				console.error('Invalid or missing "age" data:', formData.age);
-			}
-
-			// Calcul des prix selon le genre
-			if (formData.business && Array.isArray(formData.business)) {
-				formData.business.forEach((business) => {
-					if (
-						pricingRules.businessPrices &&
-						pricingRules.businessPrices[business] !== undefined
-					) {
-						total += pricingRules.businessPrices[business];
-					} else {
-						total += 0.1; // Valeur par défaut si la clé est inexistante
-					}
-				});
-			} else {
-				console.error('Invalid or missing "business" data:', formData.business);
-			}
-
-			// Calcul des prix selon le pays
-			if (formData.country && Array.isArray(formData.country)) {
-				formData.country.forEach((country) => {
-					if (
-						pricingRules.countryPrices &&
-						pricingRules.countryPrices[country] !== undefined
-					) {
-						total += pricingRules.countryPrices[country];
-					} else {
-						total += 0.05; // Valeur par défaut si la clé est inexistante
-					}
-				});
-			} else {
-				console.error('Invalid or missing "country" data:', formData.country);
-			}
-
-			// Calcul des prix selon la taille de l'app
-			if (
-				formData.app_size &&
-				pricingRules.app_sizePrices &&
-				pricingRules.app_sizePrices[formData.app_size] !== undefined
-			) {
-				total += pricingRules.app_sizePrices[formData.app_size];
-			} else {
-				total += 0.5; // Valeur par défaut si la clé est inexistante ou si formData.app_size est manquant
-			}
-
-			// Ajouter le prix pour les testeurs
-			if (formData.nb_tester && !isNaN(formData.nb_tester)) {
-				total *= formData.nb_tester; // Multiplier par le nombre de testeurs
-			} else {
-				console.error(
-					'Invalid or missing "nb_tester" data:',
-					formData.nb_tester
-				);
-			}
-
-			// Calcul des différences de dates
-			if (formData.start_date && formData.end_date) {
-				const startDate = Date.parse(formData.start_date);
-				const endDate = Date.parse(formData.end_date);
-				if (startDate && endDate && endDate > startDate) {
-					const daysDifference = Math.ceil(
-						(endDate - startDate) / (1000 * 60 * 60 * 24)
-					);
-					total *= daysDifference; // Multiplier le prix par la différence de jours
-				} else {
-					console.error(
-						"Invalid date range: start_date and end_date are incorrect."
-					);
-				}
-			} else {
-				console.error(
-					"Invalid or missing date range: start_date and end_date."
-				);
-			}
-
-			return Math.ceil(total);
-		};
+	
 		const formData = {
 			age,
 			business,
@@ -419,9 +236,9 @@ const createProjectAndPayWithWallet = async (req, res) => {
 			start_date,
 			end_date,
 		};
-		const calculatedAmount = calculateTotalPrice(formData);
+		const totalPrice = await calculateTotalPrice(formData);
 
-		if (calculatedAmount !== amount) {
+		if (totalPrice !== amount) {
 			return res.status(400).json({
 				success: false,
 				message: "The calculated price does not match the provided price",
@@ -484,7 +301,7 @@ const createProjectAndPayWithWallet = async (req, res) => {
 		const payment = new Payment({
 			user: _id,
 			project: savedProject._id,
-			amount: calculatedAmount,
+			amount: totalPrice,
 			paymentMethod: "wallet",
 			status: "completed",
 		});

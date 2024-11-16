@@ -3,24 +3,27 @@ const paginate = require('mongoose-paginate-v2')
 const aggregatePaginate = require('mongoose-aggregate-paginate-v2')
 
 const schema = new Schema({
-        range: {
-            type: String,
-            unique: true
-        },
-        active: {
-            type: Boolean,
-            default: true
-        },
-        parent: {
-            type: Schema.Types.ObjectId,
-            ref: 'age_range',
-        }
-    }, {timestamps: true}
-);
+    label: {
+        type: String,
+        required: true,
+      },
+    value: {
+        type: String,
+        required: true,
+        unique: true,
+      },
+    active: {
+        type: Boolean,
+        default: true,
+      },
+    quote:{
+      type:Number,
+    }
+    }, { timestamps: true });
 
 schema.plugin(paginate)
 schema.plugin(aggregatePaginate)
-const Age_Range = model('age_range', schema);
+const AgeRange = model('agerange', schema);
 
-module.exports = Age_Range;
+module.exports = AgeRange;
 

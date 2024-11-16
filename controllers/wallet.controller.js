@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 const User = require("../models/user.model");
 // Add funds to a wallet
 const addFunds = async (req, res) => {
-	console.log(req.body)
 	const { userId, amount, reason, depositMethod } = req.body;
 	if (!userId || !amount || !reason) {
 		return res.status(400).json({
