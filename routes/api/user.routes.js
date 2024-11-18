@@ -10,7 +10,8 @@ const {
 	checkEmailExistRequestToken,
 	changePasswordRequest,
 	getUsersWithWalletAmounts,
-	getUserDetailsWithWallet
+	getUserDetailsWithWallet,
+	countTestersAndVerifiedUsers
 } = require("../../controllers/user.controller");
 const { userAuth } = require("../../auth");
 const { Router } = require("express");
@@ -32,4 +33,6 @@ userRoutes.post("/check-email", checkEmailExistRequestToken);
 userRoutes.post("/change-password", changePasswordRequest);
 userRoutes.get("/all-users", userAuth({ isAdmin: true }), getUsersWithWalletAmounts);
 userRoutes.get("/details-with-wallet", userAuth({ isAdmin: true }), getUserDetailsWithWallet);
+userRoutes.get("/count-tester-user", userAuth({ isAdmin: true }), countTestersAndVerifiedUsers);
+
 module.exports = userRoutes;

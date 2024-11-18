@@ -792,6 +792,44 @@ const getUserDetailsWithWallet = async (req, res) => {
     });
   }
 };
+
+const countTestersAndVerifiedUsers = async (req, res) => {
+  try {
+    // Agrégation pour compter les utilisateurs "testers" et "verified"
+    const result = await User.aggregate([
+      {
+        $facet: {
+          testers: [
+            { $match: { is_tester: true, active:true } },
+            { $count: "count" }, // Compte le nombre de testeurs
+          ],
+          verifiedUsers: [
+            { $match: { verified: true, active:true } },
+            { $count: "count" }, // Compte le nombre d'utilisateurs vérifiés
+          ],
+        },
+      },
+    ]);
+
+    // Si aucun résultat, renvoyer 0 pour les deux catégories
+    const testersCount =
+      result[0].testers.length > 0 ? result[0].testers[0].count : 0;
+    const verifiedUsersCount =
+      result[0].verifiedUsers.length > 0 ? result[0].verifiedUsers[0].count : 0;
+
+    return res.status(200).json({
+      error: false,
+      data: {
+        testersCount: testersCount,
+        verifiedUsersCount: verifiedUsersCount,
+      },
+    });
+  } catch (error) {
+    console.error("Error counting testers and verified users:", error);
+    throw new Error("Failed to count testers and verified users");
+  }
+};
+
 module.exports = {
   userSocialLogin,
   userVerifyByEmail,
@@ -805,4 +843,5 @@ module.exports = {
   changePasswordRequest,
   getUsersWithWalletAmounts,
   getUserDetailsWithWallet,
+  countTestersAndVerifiedUsers
 };

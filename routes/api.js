@@ -10,7 +10,7 @@ const agerangeRoutes = require("./api/agerange.route");
 const appsizeRoutes = require("./api/appsize.route");
 const businesstypeRoutes = require("./api/businesstype.route");
 const priceRoutes = require("./api/totalprice.route");
-
+const commentRoutes = require("./api/comment.route");
 const apiRouters = Router();
 apiRouters.use("/user", userRoutes);
 apiRouters.use("/settings", languagesRoutes);
@@ -23,4 +23,5 @@ apiRouters.use("/age", agerangeRoutes);
 apiRouters.use("/appsize", appsizeRoutes);
 apiRouters.use("/business", businesstypeRoutes);
 apiRouters.use("/price", priceRoutes);
+apiRouters.use("/comment", commentRoutes);
 module.exports = apiRouters;

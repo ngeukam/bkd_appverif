@@ -20,7 +20,9 @@ const {
 	completeTestAndDistributePayments,
 	updateTesterList,
 	updateAcceptedProjectTester,
-	addTesterToSelectedList
+	addTesterToSelectedList,
+	calculatePlatformRevenue,
+	countVerifiedAndCompletedProjects
 } = require("../../controllers/project.controller");
 const { Router } = require("express");
 const { userAuth } = require("../../auth");
@@ -136,5 +138,15 @@ projectsRoutes.post(
 	"/add-tester",
 	userAuth({ isAdmin: true }),
 	addTesterToSelectedList
+);
+projectsRoutes.get(
+	"/platform-revenue",
+	userAuth({ isAdmin: true }),
+	calculatePlatformRevenue
+);
+projectsRoutes.get(
+	"/count-verif-completed-project",
+	userAuth({ isAdmin: true }),
+	countVerifiedAndCompletedProjects
 );
 module.exports = projectsRoutes;

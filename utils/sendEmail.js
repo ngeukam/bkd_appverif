@@ -73,7 +73,7 @@ function sendGmailAddressToTester(testerEmail, project) {
         <p>Congratulations! You have been invited to test the <strong>${capitalizeProjectName(project.name)}</strong> application.</p>
         <p>App Code: <strong>${project.code}</strong></p>
         <p>To accept the invitation, simply click the link below. You have until <strong>${formatDate(project.start_date)}</strong> to accept:</p>
-        <a href="${process.env.FRONTEND_URL}/user/testing-jobs" class="button">Accept Invitation</a>
+        <a href="${process.env.FRONTEND_URL}/user/invitations-to-tests" class="button">Accept Invitation</a>
         <p>If you have any issues or questions, feel free to reach out to us at <a href="mailto:contact@appverif.com">contact@appverif.com</a>.</p>
         <p>Best regards,<br>Your Development Team</p>
       </div>

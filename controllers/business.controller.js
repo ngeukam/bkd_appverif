@@ -3,7 +3,7 @@ const BusinessType = require("../models/business_type.model"); // Adjust path as
 const getBusinessTypes = async (req, res) => {
   try {
     const { query } = req;
-    const { page = 1, limit = 20, search, active } = query;
+    const { page = 1, limit = 30, search, active } = query;
     let filter = {};
 
     // Filter by active status if provided

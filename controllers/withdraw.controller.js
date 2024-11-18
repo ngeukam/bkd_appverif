@@ -5,7 +5,7 @@ const User = require("../models/user.model");
 const crypto = require("crypto");
 const { sendNotification, admin } = require("../utils/pushNotifications/push");
 // Initiate a withdrawal request (without deducting funds)
-const initiateWithdraw = async (req, res, next) => {
+const initiateWithdraw = async (req, res) => {
 	try {
 		let { _id } = res.locals.user || {};
 		let user = await User.findById(_id);
@@ -45,7 +45,7 @@ const initiateWithdraw = async (req, res, next) => {
 };
 
 // Approve a withdrawal request (deducts funds within a transaction)
-const approveWithdraw = async (req, res, next) => {
+const approveWithdraw = async (req, res) => {
 	const session = await mongoose.startSession();
 	session.startTransaction();
 	try {
@@ -112,7 +112,7 @@ const approveWithdraw = async (req, res, next) => {
 
 
 // Get all withdrawal requests (Admin or User can filter their own)
-const getWithdrawals = async (req, res, next) => {
+const getWithdrawals = async (req, res) => {
 	try {
 		const query =
 			res.locals.user.role === "admin" ? {} : { by: res.locals.user._id };
@@ -128,7 +128,7 @@ const getWithdrawals = async (req, res, next) => {
 	}
 };
 
-const getWithdrawsAdmin = async (req, res, next) => {
+const getWithdrawsAdmin = async (req, res) => {
 	try {
 		const { query } = req;
 		const { user } = res.locals;
@@ -245,7 +245,7 @@ const getWithdrawsAdmin = async (req, res, next) => {
 	}
 };
 
-const updateWithdraw = async (req, res, next) => {
+const updateWithdraw = async (req, res) => {
 	try {
 		const { body } = req;
 		if (!!body?._id) {
@@ -271,25 +271,39 @@ const updateWithdraw = async (req, res, next) => {
 	}
 };
 // delete Withdraw
-const delWithdraw = async (req, res, next) => {
+const delWithdraw = async (req, res) => {
 	try {
-		const { body } = req;
-		const withdraw = await Withdraw.findById(body._id);
-		if (!withdraw) {
-			return res.status(404).json({ error: true, msg: "Withdraw not found" });
-		}
-		await Withdraw.findByIdAndDelete(body._id);
-		return res.status(200).json({
-			error: false,
-			msg: "Deleted successfully",
+	  const { body } = req;
+  
+	  // Find the withdrawal by ID
+	  const withdraw = await Withdraw.findById(body._id);
+	  if (!withdraw) {
+		return res.status(404).json({ error: true, msg: "Withdraw not found" });
+	  }
+  
+	  // Check if withdrawal is approved or has completed status
+	  if (withdraw.approved || withdraw.status === "completed") {
+		return res.status(400).json({
+		  error: true,
+		  msg: "Cannot delete approved or completed withdrawals.",
 		});
+	  }
+  
+	  // Delete the withdrawal
+	  await Withdraw.findByIdAndDelete(body._id);
+  
+	  return res.status(200).json({
+		error: false,
+		msg: "Deleted successfully",
+	  });
 	} catch (error) {
-		return res.status(500).json({
-			error: true,
-			msg: "Server side error",
-		});
+	  return res.status(500).json({
+		error: true,
+		msg: "Server side error",
+	  });
 	}
-};
+  };
+  
 
 module.exports = {
 	initiateWithdraw,
