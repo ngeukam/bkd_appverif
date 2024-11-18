@@ -78,7 +78,6 @@ const updateCurrentCommission = async (req, res) => {
   }
 };
 
-// Fonctions pour créer un nouveau projet
 const createProjectAndPayWithCash = async (req, res) => {
   const {
     name,
@@ -255,12 +254,12 @@ const createProjectAndPayWithWallet = async (req, res) => {
     const wallets = await Wallet.find({ user: user._id }).session(session);
     const totalAmount = wallets.reduce((sum, wallet) => sum + wallet.amount, 0);
 
-    if (totalAmount < calculatedAmount) {
+    if (totalAmount < totalPrice) {
       await session.abortTransaction();
       return res.status(400).json({ message: "Insufficient funds in wallet" });
     }
 
-    let remainingAmount = calculatedAmount;
+    let remainingAmount = totalPrice;
 
     for (let wallet of wallets) {
       if (remainingAmount <= 0) break;
