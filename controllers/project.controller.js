@@ -314,7 +314,7 @@ const createProjectAndPayWithWallet = async (req, res) => {
       tester.fcm_token.forEach(async (token) => {
         await sendNotification(
           token,
-          `Congratulations! You have been received invitation to test the app: ${savedProject.name}`,
+          `You're invited to test: ${savedProject.name}`,
           `App code: ${savedProject.code}`
         );
       });
@@ -900,7 +900,7 @@ const getTestersCount = async (req, res) => {
       active: true,
       phone_types: {
         $in: phone_types.includes("web")
-          ? ["ios", "android", "pc"]
+          ? ["ios", "android", "mac", "windows"]
           : phone_types,
       },
       ...(orConditions.length > 0 && { $or: orConditions }), // Ajouter $or seulement si des conditions existent
@@ -1252,8 +1252,8 @@ const validateCashPayment = async (req, res) => {
       tester.fcm_token.forEach(async (token) => {
         await sendNotification(
           token,
-          `New app for testing: ${project.name}`,
-          `Code of app: ${project.code}`
+          `You're invited to test: ${project.name}`,
+          `App code: ${project.code}`
         );
       });
     }
@@ -1681,53 +1681,60 @@ const calculatePlatformRevenue = async (req, res) => {
 };
 
 const countVerifiedAndCompletedProjects = async (req, res) => {
-	try {
-	  // Agrégation avec un facet pour obtenir les deux comptages
-	  const result = await Project.aggregate([
-		{
-		  $facet: {
-			// Compter le nombre de projets vérifiés
-			verifiedProjects: [
-			  { $match: { verified: true } },
-			  { $count: "count" }
-			],
-  
-			// Compter le nombre de projets avec statut de test "completed"
-			completedProjects: [
-			  { $lookup: {
-				from: "acceptedprojects",
-				localField: "_id",
-				foreignField: "project",
-				as: "acceptedProjects"
-			  }},
-			  { $unwind: "$acceptedProjects" },
-			  { $match: { "acceptedProjects.status_of_test": "completed" } },
-			  { $count: "count" }
-			]
-		  }
-		}
-	  ]);
-  
-	  // Récupérer les résultats, ou 0 si aucun projet ne correspond
-	  const verifiedProjectsCount = result[0].verifiedProjects.length > 0 ? result[0].verifiedProjects[0].count : 0;
-	  const completedProjectsCount = result[0].completedProjects.length > 0 ? result[0].completedProjects[0].count : 0;
-  
-	  return res.status(200).json({
-		error: false,
-		data: {
-			verifiedProjectsCount: verifiedProjectsCount,
-			completedProjectsCount: completedProjectsCount,
-		},
-	  });
-	} catch (error) {
-	  console.error("Error counting projects:", error);
-	  return {
-		error: true,
-		message: "Failed to count verified and completed projects"
-	  };
-	}
-  };
-  
+  try {
+    // Agrégation avec un facet pour obtenir les deux comptages
+    const result = await Project.aggregate([
+      {
+        $facet: {
+          // Compter le nombre de projets vérifiés
+          verifiedProjects: [
+            { $match: { verified: true } },
+            { $count: "count" },
+          ],
+
+          // Compter le nombre de projets avec statut de test "completed"
+          completedProjects: [
+            {
+              $lookup: {
+                from: "acceptedprojects",
+                localField: "_id",
+                foreignField: "project",
+                as: "acceptedProjects",
+              },
+            },
+            { $unwind: "$acceptedProjects" },
+            { $match: { "acceptedProjects.status_of_test": "completed" } },
+            { $count: "count" },
+          ],
+        },
+      },
+    ]);
+
+    // Récupérer les résultats, ou 0 si aucun projet ne correspond
+    const verifiedProjectsCount =
+      result[0].verifiedProjects.length > 0
+        ? result[0].verifiedProjects[0].count
+        : 0;
+    const completedProjectsCount =
+      result[0].completedProjects.length > 0
+        ? result[0].completedProjects[0].count
+        : 0;
+
+    return res.status(200).json({
+      error: false,
+      data: {
+        verifiedProjectsCount: verifiedProjectsCount,
+        completedProjectsCount: completedProjectsCount,
+      },
+    });
+  } catch (error) {
+    console.error("Error counting projects:", error);
+    return {
+      error: true,
+      message: "Failed to count verified and completed projects",
+    };
+  }
+};
 
 module.exports = {
   getListsPreferences,
@@ -1753,5 +1760,5 @@ module.exports = {
   updateAcceptedProjectTester,
   addTesterToSelectedList,
   calculatePlatformRevenue,
-  countVerifiedAndCompletedProjects
+  countVerifiedAndCompletedProjects,
 };
