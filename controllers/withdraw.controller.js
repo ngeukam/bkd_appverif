@@ -122,9 +122,9 @@ const getWithdrawals = async (req, res) => {
 			sort: { createdAt: -1 },
 		});
 
-		res.status(200).json(withdrawals);
+		return res.status(200).json(withdrawals);
 	} catch (error) {
-		res.status(500).json({ message: "Error fetching withdrawals", error });
+		return res.status(500).json({ message: "Error fetching withdrawals", error });
 	}
 };
 
@@ -137,7 +137,7 @@ const getWithdrawsAdmin = async (req, res) => {
 
 		// Handle search query, if provided
 		if (query.search) {
-			const searchTerm = query.search.toLowerCase();
+			const searchTerm = query.search.toLowerCase().trim();
 			filter = {
 				$or: [
 					{ "user.email": { $regex: new RegExp(searchTerm, "i") } },
@@ -170,7 +170,7 @@ const getWithdrawsAdmin = async (req, res) => {
 
 		// Filter by user role
 		if (user && user._id) {
-			if (user.role === "driver") {
+			if (user.role === "employee") {
 				pipeline.push({
 					$match: { by: new mongoose.Types.ObjectId(user._id) },
 				});

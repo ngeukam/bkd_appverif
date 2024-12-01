@@ -645,61 +645,83 @@ const getUsersWithWalletAmounts = async (req, res) => {
 
     // Filtre de recherche si un paramètre "search" est fourni
     if (query.search) {
+      const searchTerm = query.search.toLowerCase().trim();
+      const escapedSearchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       filter = {
         $or: [
-          { name: { $regex: new RegExp(query.search, "i") } },
-          { email: { $regex: new RegExp(query.search, "i") } },
+          { name: { $regex: new RegExp(searchTerm, "i") } },
+          { email: { $regex: new RegExp(searchTerm, "i") } },
+          { phone: { $regex: new RegExp(escapedSearchTerm, "i") } },
         ],
       };
     }
+    // Handle approval status filter, if provided
+    const isTester = query.is_tester ? query.is_tester === "true" : undefined;
 
-    // Limiter l'accès aux utilisateurs si nécessaire (par exemple, si l'utilisateur n'est pas admin)
+    // Start building the aggregation pipeline
+    const pipeline = [];
+
+    // Match by user role (only restrict for non-admin users)
     if (user && user.role !== "admin") {
-      filter._id = new mongoose.Types.ObjectId(user._id);
+      pipeline.push({
+        $match: { _id: new mongoose.Types.ObjectId(user._id) },
+      });
     }
+
+    // Match by search filter, if any
+    if (Object.keys(filter).length > 0) {
+      pipeline.push({
+        $match: filter,
+      });
+    }
+    if (isTester !== undefined) {
+      pipeline.push({
+        $match: { is_tester: isTester },
+      });
+    }
+    pipeline.push(
+      // Jointure avec la collection Wallet pour obtenir tous les montants associés à chaque utilisateur
+      {
+        $lookup: {
+          from: "wallets",
+          localField: "_id",
+          foreignField: "user",
+          as: "wallets",
+        },
+      },
+
+      // Calcul de la somme des montants des portefeuilles
+      {
+        $addFields: {
+          totalWalletAmount: {
+            $sum: "$wallets.amount",
+          },
+        },
+      },
+
+      // Projection des champs souhaités
+      {
+        $project: {
+          _id: 1,
+          email: 1,
+          age_ranges: 1,
+          phone_types: 1,
+          is_tester: 1,
+          business_types: 1,
+          country: 1,
+          phone:1,
+          verified: 1,
+          totalWalletAmount: 1,
+          role: 1,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      }
+    );
 
     // Agrégation avec pagination
     const usersWithWallets = await User.aggregatePaginate(
-      User.aggregate([
-        { $match: filter },
-
-        // Jointure avec la collection Wallet pour obtenir tous les montants associés à chaque utilisateur
-        {
-          $lookup: {
-            from: "wallets",
-            localField: "_id",
-            foreignField: "user",
-            as: "wallets",
-          },
-        },
-
-        // Calcul de la somme des montants des portefeuilles
-        {
-          $addFields: {
-            totalWalletAmount: {
-              $sum: "$wallets.amount",
-            },
-          },
-        },
-
-        // Projection des champs souhaités
-        {
-          $project: {
-            _id: 1,
-            email: 1,
-            age_ranges: 1,
-            phone_types: 1,
-            is_tester: 1,
-            business_types: 1,
-            country: 1,
-            verified: 1,
-            totalWalletAmount: 1,
-            role: 1,
-            createdAt: 1,
-            updatedAt: 1,
-          },
-        },
-      ]),
+      User.aggregate(pipeline),
       {
         page: query.page || 1,
         limit: query.size || 10,
@@ -800,11 +822,11 @@ const countTestersAndVerifiedUsers = async (req, res) => {
       {
         $facet: {
           testers: [
-            { $match: { is_tester: true, active:true } },
+            { $match: { is_tester: true, active: true } },
             { $count: "count" }, // Compte le nombre de testeurs
           ],
           verifiedUsers: [
-            { $match: { verified: true, active:true } },
+            { $match: { verified: true, active: true } },
             { $count: "count" }, // Compte le nombre d'utilisateurs vérifiés
           ],
         },
@@ -843,5 +865,5 @@ module.exports = {
   changePasswordRequest,
   getUsersWithWalletAmounts,
   getUserDetailsWithWallet,
-  countTestersAndVerifiedUsers
+  countTestersAndVerifiedUsers,
 };

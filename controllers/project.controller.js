@@ -329,7 +329,6 @@ const createProjectAndPayWithWallet = async (req, res) => {
         );
       });
     }
-
     // Commit transaction
     await session.commitTransaction();
 
@@ -861,9 +860,7 @@ const getTestersCount = async (req, res) => {
     const {
       age_ranges,
       business_types,
-      hobbies,
       phone_types,
-      gender,
       country,
       nb_tester,
     } = req.body; // or req.query if using GET
@@ -875,19 +872,6 @@ const getTestersCount = async (req, res) => {
     }
     if (business_types) {
       orConditions.push({ business_types: { $in: business_types } }); // Match any of the business types
-    }
-    if (hobbies) {
-      orConditions.push({ hobbies: { $in: hobbies } }); // Match any of the hobbies
-    }
-    // if (phone_types) {
-    // 	if (phone_types.includes("web")) {
-    // 		orConditions.push({ phone_types: { $in: ["ios", "android", "pc"] } });
-    // 	} else {
-    // 		orConditions.push({ phone_types: { $in: phone_types } }); // Match any of the other phone types
-    // 	}
-    // }
-    if (gender) {
-      orConditions.push({ gender }); // Match any of the hobbies
     }
     if (country) {
       orConditions.push({ country }); // Match any of the hobbies
@@ -903,7 +887,7 @@ const getTestersCount = async (req, res) => {
           ? ["ios", "android", "mac", "windows"]
           : phone_types,
       },
-      ...(orConditions.length > 0 && { $or: orConditions }), // Ajouter $or seulement si des conditions existent
+      ...(orConditions.length > 0 && { $and: orConditions }), // Ajouter $or seulement si des conditions existent
     };
 
     // Utiliser Mongoose pour compter les utilisateurs correspondant aux filtres
@@ -916,7 +900,6 @@ const getTestersCount = async (req, res) => {
     // Mélanger et sélectionner un nombre aléatoire de testeurs
     const shuffledTesters = potentialTesters.sort(() => 0.5 - Math.random());
     const sampleTesters = shuffledTesters.slice(0, nb_tester);
-
     // Envoyer le résultat en réponse
     res.status(200).json({
       success: true,
